@@ -639,7 +639,7 @@ module FastJetFinder FastJetFinder {
 
   # algorithm: 1 CDFJetClu, 2 MidPoint, 3 SIScone, 4 kt, 5 Cambridge/Aachen, 6 antikt
   set JetAlgorithm 6
-  set ParameterR 0.5
+  set ParameterR 0.4
 
   set JetPTMin 20.0
 }
