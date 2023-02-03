@@ -1,0 +1,15 @@
+[ libDelphes.so ]
+# List of selected classes
+class HepMCEvent
+class Event
+class Weight
+class GenParticle
+class SortableObject
+class Track
+class Tower
+class Jet
+class MissingET
+class Electron
+class Photon
+class Muon
+class ScalarHT
