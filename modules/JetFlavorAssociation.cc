@@ -228,6 +228,8 @@ void JetFlavorAssociation::GetAlgoFlavor(Candidate *jet, TObjArray *partonArray,
   TIter itPartonArray(partonArray);
   TIter itPartonLHEFArray(partonLHEFArray);
 
+  Candidate* parton_save = 0;
+
   itPartonArray.Reset();
   while((parton = static_cast<Candidate *>(itPartonArray.Next())))
   {
@@ -236,7 +238,10 @@ void JetFlavorAssociation::GetAlgoFlavor(Candidate *jet, TObjArray *partonArray,
     if(TMath::Abs(parton->PID) == 21) pdgCode = 0;
     if(jet->Momentum.DeltaR(parton->Momentum) <= fDeltaR)
     {
-      if(pdgCodeMax < pdgCode) pdgCodeMax = pdgCode;
+      if(pdgCodeMax < pdgCode) {
+        pdgCodeMax = pdgCode;
+        parton_save = parton;
+      }
     }
 
     if(!fParticleLHEFInputArray) continue;
@@ -281,6 +286,21 @@ void JetFlavorAssociation::GetAlgoFlavor(Candidate *jet, TObjArray *partonArray,
 
   if(pdgCodeMax == 0) pdgCodeMax = 21;
   if(pdgCodeMax == -1) pdgCodeMax = 0;
+
+  if(parton_save)
+  {
+    if(TMath::Abs(parton_save->PID)==5)
+    {
+      while(parton_save->M1>=0 && TMath::Abs(parton_save->PID)!=6)
+      {
+        parton_save = static_cast<Candidate *>(fPartonInputArray->At(parton_save->M1));
+      }
+      if(TMath::Abs(parton_save->PID)==6)
+      {
+        pdgCodeMax += 1;
+      }
+    }
+  }
 
   jet->Flavor = pdgCodeMax;
 }
