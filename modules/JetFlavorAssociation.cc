@@ -291,8 +291,10 @@ void JetFlavorAssociation::GetAlgoFlavor(Candidate *jet, TObjArray *partonArray,
   {
     if(TMath::Abs(parton_save->PID)==5)
     {
-      while(parton_save->M1>=0 && TMath::Abs(parton_save->PID)!=6)
+      std::vector<int> previous_mother_indices;
+      while(parton_save->M1>=0 && (parton_save->M1<fPartonInputArray->GetEntries()) && std::find(previous_mother_indices.begin(),previous_mother_indices.end(),parton_save->M1)==previous_mother_indices.end() && TMath::Abs(parton_save->PID)!=6)
       {
+        previous_mother_indices.push_back(parton_save->M1);
         parton_save = static_cast<Candidate *>(fPartonInputArray->At(parton_save->M1));
       }
       if(TMath::Abs(parton_save->PID)==6)
