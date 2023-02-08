@@ -228,7 +228,10 @@ void JetFlavorAssociation::GetAlgoFlavor(Candidate *jet, TObjArray *partonArray,
   TIter itPartonArray(partonArray);
   TIter itPartonLHEFArray(partonLHEFArray);
 
-  Candidate* parton_save = 0;
+  // Pointer to the matched parton
+  Candidate* parton_matched = 0;
+  // Keep track of the smallest DeltaR
+  float deltaRMin = fDeltaR+0.1;
 
   itPartonArray.Reset();
   while((parton = static_cast<Candidate *>(itPartonArray.Next())))
@@ -238,9 +241,13 @@ void JetFlavorAssociation::GetAlgoFlavor(Candidate *jet, TObjArray *partonArray,
     if(TMath::Abs(parton->PID) == 21) pdgCode = 0;
     if(jet->Momentum.DeltaR(parton->Momentum) <= fDeltaR)
     {
-      if(pdgCodeMax < pdgCode) {
+      if(pdgCodeMax <= pdgCode) {
         pdgCodeMax = pdgCode;
-        parton_save = parton;
+        if(jet->Momentum.DeltaR(parton->Momentum)<deltaRMin)
+        {
+          parton_matched = parton;
+          deltaRMin = jet->Momentum.DeltaR(parton->Momentum);
+        }
       }
     }
 
@@ -287,21 +294,69 @@ void JetFlavorAssociation::GetAlgoFlavor(Candidate *jet, TObjArray *partonArray,
   if(pdgCodeMax == 0) pdgCodeMax = 21;
   if(pdgCodeMax == -1) pdgCodeMax = 0;
 
-  if(parton_save)
+  // If we have a matched parton, let's get some more information
+  if(parton_matched)
   {
-    if(TMath::Abs(parton_save->PID)==5)
+    // Check if the matched parton is a b quark
+    if(TMath::Abs(parton_matched->PID)==5)
     {
-      std::vector<int> previous_mother_indices;
-      while(parton_save->M1>=0 && (parton_save->M1<fPartonInputArray->GetEntries()) && std::find(previous_mother_indices.begin(),previous_mother_indices.end(),parton_save->M1)==previous_mother_indices.end() && TMath::Abs(parton_save->PID)!=6)
+      // First check whether the found b quark is actually the last in the history or not
+      // If not, go down the history and check for further b quarks
+      Candidate* parton_daughter = parton_matched;
+      while(parton_daughter && TMath::Abs(parton_daughter->PID)==5)
       {
-        previous_mother_indices.push_back(parton_save->M1);
-        parton_save = static_cast<Candidate *>(fPartonInputArray->At(parton_save->M1));
+        //std::cout << "Going down in history" << std::endl;
+        if(parton_daughter->D1>=0 && TMath::Abs(static_cast<Candidate *>(fPartonInputArray->At(parton_daughter->D1))->PID)==5)
+        {
+          parton_daughter = static_cast<Candidate *>(fPartonInputArray->At(parton_daughter->D1));
+        }
+        else if(parton_daughter->D2>=0 && TMath::Abs(static_cast<Candidate *>(fPartonInputArray->At(parton_daughter->D2))->PID)==5)
+        {
+          parton_daughter = static_cast<Candidate *>(fPartonInputArray->At(parton_daughter->D2));
+        }
+        else
+        {
+          break;
+        }
       }
-      if(TMath::Abs(parton_save->PID)==6)
+      // Set the matched parton to the last in the history
+      parton_matched = parton_daughter;
+      // Now let's go up the b Quark history until we find something other than a b quark
+      // While going up the history, we remove all the intermediate states from the considered parton list
+      Candidate* parton_ancestor = parton_matched;
+      std::vector<int> previous_mother_indices;
+      while(parton_ancestor->M1>=0 && (parton_ancestor->M1<fPartonInputArray->GetEntries()) && std::find(previous_mother_indices.begin(),previous_mother_indices.end(),parton_ancestor->M1)==previous_mother_indices.end() && TMath::Abs(parton_ancestor->PID)==5)
       {
-        pdgCodeMax += 1;
+        //std::cout << "Going up in history" << std::endl;
+        previous_mother_indices.push_back(parton_ancestor->M1);
+        parton_ancestor = static_cast<Candidate *>(fPartonInputArray->At(parton_ancestor->M1));
+        partonArray->Remove(parton_ancestor);
+      }
+      // Now we are at the parton right before the b quark chain
+      // Check which particle this is and set a corresponding number
+      if(TMath::Abs(parton_ancestor->PID)==6)
+      {
+        pdgCodeMax = 56;
+      }
+      else if(TMath::Abs(parton_ancestor->PID)==23)
+      {
+        pdgCodeMax = 523;
+      }
+      else if(TMath::Abs(parton_ancestor->PID)==25)
+      {
+        pdgCodeMax = 525;
+      }
+      else if(TMath::Abs(parton_ancestor->PID)==21)
+      {
+        pdgCodeMax = 521;
+      }
+      else if(TMath::Abs(parton_ancestor->PID)==22)
+      {
+        pdgCodeMax = 522;
       }
     }
+    // Also remove the matched parton from the considered partons
+    partonArray->Remove(parton_matched);
   }
 
   jet->Flavor = pdgCodeMax;
