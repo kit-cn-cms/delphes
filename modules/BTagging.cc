@@ -70,6 +70,8 @@ void BTagging::Init()
   Int_t i, size;
 
   fBitNumber = GetInt("BitNumber", 0);
+  seed = GetInt("Seed", 0);
+  rand = new TRandom3(seed=seed);
 
   // read efficiency formulas
   param = GetParam("EfficiencyFormula");
@@ -144,7 +146,7 @@ void BTagging::Process()
     formula = itEfficiencyMap->second;
 
     // apply an efficiency formula
-    jet->BTag |= (gRandom->Uniform() <= formula->Eval(pt, eta, phi, e)) << fBitNumber;
+    jet->BTag |= (rand->Uniform() <= formula->Eval(pt, eta, phi, e)) << fBitNumber;
 
     // find an efficiency formula for algo flavor definition
     itEfficiencyMap = fEfficiencyMap.find(jet->FlavorAlgo);
@@ -155,7 +157,7 @@ void BTagging::Process()
     formula = itEfficiencyMap->second;
 
     // apply an efficiency formula
-    jet->BTagAlgo |= (gRandom->Uniform() <= formula->Eval(pt, eta, phi, e)) << fBitNumber;
+    jet->BTagAlgo |= (rand->Uniform() <= formula->Eval(pt, eta, phi, e)) << fBitNumber;
 
     // find an efficiency formula for phys flavor definition
     itEfficiencyMap = fEfficiencyMap.find(jet->FlavorPhys);
@@ -166,7 +168,7 @@ void BTagging::Process()
     formula = itEfficiencyMap->second;
 
     // apply an efficiency formula
-    jet->BTagPhys |= (gRandom->Uniform() <= formula->Eval(pt, eta, phi, e)) << fBitNumber;
+    jet->BTagPhys |= (rand->Uniform() <= formula->Eval(pt, eta, phi, e)) << fBitNumber;
   }
 }
 

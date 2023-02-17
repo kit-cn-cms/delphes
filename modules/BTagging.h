@@ -31,6 +31,8 @@
 
 #include "classes/DelphesModule.h"
 
+#include "TRandom3.h"
+
 #include <map>
 
 class TObjArray;
@@ -48,6 +50,8 @@ public:
 
 private:
   Int_t fBitNumber;
+  Int_t seed;
+  TRandom3 *rand;
 
 #if !defined(__CINT__) && !defined(__CLING__)
   std::map<Int_t, DelphesFormula *> fEfficiencyMap; //!
