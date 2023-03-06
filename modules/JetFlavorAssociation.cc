@@ -336,22 +336,65 @@ void JetFlavorAssociation::GetAlgoFlavor(Candidate *jet, TObjArray *partonArray,
       // Check which particle this is and set a corresponding number
       if(TMath::Abs(parton_ancestor->PID)==6)
       {
+        // found top quark
         pdgCodeMax = 56;
+        // search for the W from the top decay
+        Candidate* w_candidate = 0;
+        if(parton_ancestor->D1>=0 && TMath::Abs(static_cast<Candidate *>(fPartonInputArray->At(parton_ancestor->D1))->PID)==24)
+        {
+          w_candidate = static_cast<Candidate *>(fPartonInputArray->At(parton_ancestor->D1));
+        }
+        else if(parton_ancestor->D2>=0 && TMath::Abs(static_cast<Candidate *>(fPartonInputArray->At(parton_ancestor->D2))->PID)==24)
+        {
+          w_candidate = static_cast<Candidate *>(fPartonInputArray->At(parton_ancestor->D2));
+        }
+        // now find the last W in the history
+        while(w_candidate && TMath::Abs(w_candidate->PID)==24)
+        {
+          //std::cout << "Going down in history" << std::endl;
+          if(w_candidate->D1>=0 && TMath::Abs(static_cast<Candidate *>(fPartonInputArray->At(w_candidate->D1))->PID)==24)
+          {
+            w_candidate = static_cast<Candidate *>(fPartonInputArray->At(w_candidate->D1));
+          }
+          else if(w_candidate->D2>=0 && TMath::Abs(static_cast<Candidate *>(fPartonInputArray->At(w_candidate->D2))->PID)==24)
+          {
+            w_candidate = static_cast<Candidate *>(fPartonInputArray->At(w_candidate->D2));
+          }
+          else
+          {
+            break;
+          }
+        }
+        // after finding the last W, check whether it decays hadronically or leptonically
+        if(w_candidate->D1>=0 && TMath::Abs(static_cast<Candidate *>(fPartonInputArray->At(w_candidate->D1))->PID)<=6 && w_candidate->D2>=0 && TMath::Abs(static_cast<Candidate *>(fPartonInputArray->At(w_candidate->D2))->PID)<=6)
+        {
+          // hadronic decay
+          pdgCodeMax = 560;
+        }
+        else if(w_candidate->D1>=0 && TMath::Abs(static_cast<Candidate *>(fPartonInputArray->At(w_candidate->D1))->PID)<=18 && w_candidate->D2>=0 && TMath::Abs(static_cast<Candidate *>(fPartonInputArray->At(w_candidate->D2))->PID)<=18)
+        {
+          // if not hadronic decay, then leptonic decay
+          pdgCodeMax = 561;
+        }
       }
       else if(TMath::Abs(parton_ancestor->PID)==23)
       {
+        // found z boson
         pdgCodeMax = 523;
       }
       else if(TMath::Abs(parton_ancestor->PID)==25)
       {
+        // found higgs boson
         pdgCodeMax = 525;
       }
       else if(TMath::Abs(parton_ancestor->PID)==21)
       {
+        // found gluon
         pdgCodeMax = 521;
       }
       else if(TMath::Abs(parton_ancestor->PID)==22)
       {
+        // found photon
         pdgCodeMax = 522;
       }
     }
