@@ -232,6 +232,8 @@ void JetFlavorAssociation::GetAlgoFlavor(Candidate *jet, TObjArray *partonArray,
   Candidate* parton_matched = 0;
   // Keep track of the smallest DeltaR
   float deltaRMin = fDeltaR+0.1;
+  // Origin of the jet flavor i.e. the relevant mother particle of the matched parton
+  int flavorOrigin = 0;
 
   itPartonArray.Reset();
   while((parton = static_cast<Candidate *>(itPartonArray.Next())))
@@ -337,7 +339,7 @@ void JetFlavorAssociation::GetAlgoFlavor(Candidate *jet, TObjArray *partonArray,
       if(TMath::Abs(parton_ancestor->PID)==6)
       {
         // found top quark
-        pdgCodeMax = 56;
+        flavorOrigin = 6;
         // search for the W from the top decay
         Candidate* w_candidate = 0;
         if(parton_ancestor->D1>=0 && TMath::Abs(static_cast<Candidate *>(fPartonInputArray->At(parton_ancestor->D1))->PID)==24)
@@ -369,33 +371,33 @@ void JetFlavorAssociation::GetAlgoFlavor(Candidate *jet, TObjArray *partonArray,
         if(w_candidate->D1>=0 && TMath::Abs(static_cast<Candidate *>(fPartonInputArray->At(w_candidate->D1))->PID)<=6 && w_candidate->D2>=0 && TMath::Abs(static_cast<Candidate *>(fPartonInputArray->At(w_candidate->D2))->PID)<=6)
         {
           // hadronic decay
-          pdgCodeMax = 560;
+          flavorOrigin = 60;
         }
         else if(w_candidate->D1>=0 && TMath::Abs(static_cast<Candidate *>(fPartonInputArray->At(w_candidate->D1))->PID)<=18 && w_candidate->D2>=0 && TMath::Abs(static_cast<Candidate *>(fPartonInputArray->At(w_candidate->D2))->PID)<=18)
         {
           // if not hadronic decay, then leptonic decay
-          pdgCodeMax = 561;
+          flavorOrigin = 61;
         }
       }
       else if(TMath::Abs(parton_ancestor->PID)==23)
       {
         // found z boson
-        pdgCodeMax = 523;
+        flavorOrigin = 23;
       }
       else if(TMath::Abs(parton_ancestor->PID)==25)
       {
         // found higgs boson
-        pdgCodeMax = 525;
+        flavorOrigin = 25;
       }
       else if(TMath::Abs(parton_ancestor->PID)==21)
       {
         // found gluon
-        pdgCodeMax = 521;
+        flavorOrigin = 21;
       }
       else if(TMath::Abs(parton_ancestor->PID)==22)
       {
         // found photon
-        pdgCodeMax = 522;
+        flavorOrigin = 22;
       }
     }
     // Also remove the matched parton from the considered partons
@@ -403,6 +405,7 @@ void JetFlavorAssociation::GetAlgoFlavor(Candidate *jet, TObjArray *partonArray,
   }
 
   jet->Flavor = pdgCodeMax;
+  jet->FlavorOrigin = flavorOrigin;
 }
 
 //------------------------------------------------------------------------------
