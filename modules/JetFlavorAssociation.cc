@@ -299,20 +299,22 @@ void JetFlavorAssociation::GetAlgoFlavor(Candidate *jet, TObjArray *partonArray,
   // If we have a matched parton, let's get some more information
   if(parton_matched)
   {
-    // Check if the matched parton is a b quark
-    if(TMath::Abs(parton_matched->PID)==5)
+    int paton_matched_pid = TMath::Abs(parton_matched->PID);
+    // std::cout << "Parton matched " << paton_matched_pid << std::endl;
+    // Check if the matched parton is a sensible parton in the sense of flavor matching
+    if((TMath::Abs(parton_matched->PID)>=1 && TMath::Abs(parton_matched->PID)<=5) || (TMath::Abs(parton_matched->PID)==21))
     {
-      // First check whether the found b quark is actually the last in the history or not
-      // If not, go down the history and check for further b quarks
+      // First check whether the found parton is actually the last in the history or not
+      // If not, go down the history and check for further similar partons
       Candidate* parton_daughter = parton_matched;
-      while(parton_daughter && TMath::Abs(parton_daughter->PID)==5)
+      while(parton_daughter && TMath::Abs(parton_daughter->PID)==paton_matched_pid)
       {
         //std::cout << "Going down in history" << std::endl;
-        if(parton_daughter->D1>=0 && TMath::Abs(static_cast<Candidate *>(fPartonInputArray->At(parton_daughter->D1))->PID)==5)
+        if(parton_daughter->D1>=0 && TMath::Abs(static_cast<Candidate *>(fPartonInputArray->At(parton_daughter->D1))->PID)==paton_matched_pid)
         {
           parton_daughter = static_cast<Candidate *>(fPartonInputArray->At(parton_daughter->D1));
         }
-        else if(parton_daughter->D2>=0 && TMath::Abs(static_cast<Candidate *>(fPartonInputArray->At(parton_daughter->D2))->PID)==5)
+        else if(parton_daughter->D2>=0 && TMath::Abs(static_cast<Candidate *>(fPartonInputArray->At(parton_daughter->D2))->PID)==paton_matched_pid)
         {
           parton_daughter = static_cast<Candidate *>(fPartonInputArray->At(parton_daughter->D2));
         }
@@ -323,19 +325,20 @@ void JetFlavorAssociation::GetAlgoFlavor(Candidate *jet, TObjArray *partonArray,
       }
       // Set the matched parton to the last in the history
       parton_matched = parton_daughter;
-      // Now let's go up the b Quark history until we find something other than a b quark
+      // Now let's go up the parton history until we find something other than the parton
       // While going up the history, we remove all the intermediate states from the considered parton list
       Candidate* parton_ancestor = parton_matched;
       std::vector<int> previous_mother_indices;
-      while(parton_ancestor->M1>=0 && (parton_ancestor->M1<fPartonInputArray->GetEntries()) && std::find(previous_mother_indices.begin(),previous_mother_indices.end(),parton_ancestor->M1)==previous_mother_indices.end() && TMath::Abs(parton_ancestor->PID)==5)
+      while(parton_ancestor->M1>=0 && (parton_ancestor->M1<fPartonInputArray->GetEntries()) && std::find(previous_mother_indices.begin(),previous_mother_indices.end(),parton_ancestor->M1)==previous_mother_indices.end() && TMath::Abs(parton_ancestor->PID)==paton_matched_pid)
       {
         //std::cout << "Going up in history" << std::endl;
         previous_mother_indices.push_back(parton_ancestor->M1);
         parton_ancestor = static_cast<Candidate *>(fPartonInputArray->At(parton_ancestor->M1));
         partonArray->Remove(parton_ancestor);
       }
-      // Now we are at the parton right before the b quark chain
+      // Now we are at the parton right before the parton chain
       // Check which particle this is and set a corresponding number
+      // std::cout << "Final ancestor " << TMath::Abs(parton_ancestor->PID) << std::endl;
       if(TMath::Abs(parton_ancestor->PID)==6)
       {
         // found top quark
@@ -350,33 +353,37 @@ void JetFlavorAssociation::GetAlgoFlavor(Candidate *jet, TObjArray *partonArray,
         {
           w_candidate = static_cast<Candidate *>(fPartonInputArray->At(parton_ancestor->D2));
         }
-        // now find the last W in the history
-        while(w_candidate && TMath::Abs(w_candidate->PID)==24)
+        // std::cout << "W candidate " << w_candidate << std::endl;
+        if(w_candidate)
         {
-          //std::cout << "Going down in history" << std::endl;
-          if(w_candidate->D1>=0 && TMath::Abs(static_cast<Candidate *>(fPartonInputArray->At(w_candidate->D1))->PID)==24)
+          // now find the last W in the history
+          while(w_candidate && TMath::Abs(w_candidate->PID)==24)
           {
-            w_candidate = static_cast<Candidate *>(fPartonInputArray->At(w_candidate->D1));
+            //std::cout << "Going down in history" << std::endl;
+            if(w_candidate->D1>=0 && TMath::Abs(static_cast<Candidate *>(fPartonInputArray->At(w_candidate->D1))->PID)==24)
+            {
+              w_candidate = static_cast<Candidate *>(fPartonInputArray->At(w_candidate->D1));
+            }
+            else if(w_candidate->D2>=0 && TMath::Abs(static_cast<Candidate *>(fPartonInputArray->At(w_candidate->D2))->PID)==24)
+            {
+              w_candidate = static_cast<Candidate *>(fPartonInputArray->At(w_candidate->D2));
+            }
+            else
+            {
+              break;
+            }
           }
-          else if(w_candidate->D2>=0 && TMath::Abs(static_cast<Candidate *>(fPartonInputArray->At(w_candidate->D2))->PID)==24)
+          // after finding the last W, check whether it decays hadronically or leptonically
+          if(w_candidate->D1>=0 && TMath::Abs(static_cast<Candidate *>(fPartonInputArray->At(w_candidate->D1))->PID)<=6 && w_candidate->D2>=0 && TMath::Abs(static_cast<Candidate *>(fPartonInputArray->At(w_candidate->D2))->PID)<=6)
           {
-            w_candidate = static_cast<Candidate *>(fPartonInputArray->At(w_candidate->D2));
+            // hadronic decay
+            flavorOrigin = 60;
           }
-          else
+          else if(w_candidate->D1>=0 && TMath::Abs(static_cast<Candidate *>(fPartonInputArray->At(w_candidate->D1))->PID)<=18 && w_candidate->D2>=0 && TMath::Abs(static_cast<Candidate *>(fPartonInputArray->At(w_candidate->D2))->PID)<=18)
           {
-            break;
+            // if not hadronic decay, then leptonic decay
+            flavorOrigin = 61;
           }
-        }
-        // after finding the last W, check whether it decays hadronically or leptonically
-        if(w_candidate->D1>=0 && TMath::Abs(static_cast<Candidate *>(fPartonInputArray->At(w_candidate->D1))->PID)<=6 && w_candidate->D2>=0 && TMath::Abs(static_cast<Candidate *>(fPartonInputArray->At(w_candidate->D2))->PID)<=6)
-        {
-          // hadronic decay
-          flavorOrigin = 60;
-        }
-        else if(w_candidate->D1>=0 && TMath::Abs(static_cast<Candidate *>(fPartonInputArray->At(w_candidate->D1))->PID)<=18 && w_candidate->D2>=0 && TMath::Abs(static_cast<Candidate *>(fPartonInputArray->At(w_candidate->D2))->PID)<=18)
-        {
-          // if not hadronic decay, then leptonic decay
-          flavorOrigin = 61;
         }
       }
       else if(TMath::Abs(parton_ancestor->PID)==23)
@@ -399,11 +406,22 @@ void JetFlavorAssociation::GetAlgoFlavor(Candidate *jet, TObjArray *partonArray,
         // found photon
         flavorOrigin = 22;
       }
+      else if(TMath::Abs(parton_ancestor->PID)==24)
+      {
+        // found w boson
+        flavorOrigin = 24;
+      }
+      else if(TMath::Abs(parton_ancestor->PID)==2212)
+      {
+        // found nothing, history went back to initial proton
+        flavorOrigin = 2212;
+      }
     }
     // Also remove the matched parton from the considered partons
     partonArray->Remove(parton_matched);
   }
-
+  // std::cout << "Flavor " << pdgCodeMax << std::endl;
+  // std::cout << "FlavorOrigin " << flavorOrigin << std::endl;
   jet->Flavor = pdgCodeMax;
   jet->FlavorOrigin = flavorOrigin;
 }
