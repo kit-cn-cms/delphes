@@ -243,13 +243,17 @@ void JetFlavorAssociation::GetAlgoFlavor(Candidate *jet, TObjArray *partonArray,
     if(TMath::Abs(parton->PID) == 21) pdgCode = 0;
     if(jet->Momentum.DeltaR(parton->Momentum) <= fDeltaR)
     {
-      if(pdgCodeMax <= pdgCode) {
-        pdgCodeMax = pdgCode;
+      if(pdgCodeMax == pdgCode) {
+        //pdgCodeMax = pdgCode;
         if(jet->Momentum.DeltaR(parton->Momentum)<deltaRMin)
         {
           parton_matched = parton;
           deltaRMin = jet->Momentum.DeltaR(parton->Momentum);
         }
+      }
+      else if(pdgCodeMax < pdgCode) {
+        pdgCodeMax = pdgCode;
+        parton_matched = parton;
       }
     }
 
