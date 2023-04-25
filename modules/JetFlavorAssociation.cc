@@ -299,22 +299,22 @@ void JetFlavorAssociation::GetAlgoFlavor(Candidate *jet, TObjArray *partonArray,
   // If we have a matched parton, let's get some more information
   if(parton_matched)
   {
-    int paton_matched_pid = TMath::Abs(parton_matched->PID);
-    // std::cout << "Parton matched " << paton_matched_pid << std::endl;
-    // Check if the matched parton is a sensible parton in the sense of flavor matching
-    if((TMath::Abs(parton_matched->PID)>=1 && TMath::Abs(parton_matched->PID)<=5) || (TMath::Abs(parton_matched->PID)==21))
+    int parton_matched_pid = TMath::Abs(parton_matched->PID);
+    // std::cout << "Parton matched " << parton_matched_pid << std::endl;
+    // Check if the matched parton is a sensible parton in the sense of flavor matching meaning udscb quark or gluon
+    if((parton_matched_pid>=1 && parton_matched_pid<=5) || (parton_matched_pid==21))
     {
       // First check whether the found parton is actually the last in the history or not
       // If not, go down the history and check for further similar partons
       Candidate* parton_daughter = parton_matched;
-      while(parton_daughter && TMath::Abs(parton_daughter->PID)==paton_matched_pid)
+      while(parton_daughter && TMath::Abs(parton_daughter->PID)==parton_matched_pid)
       {
-        //std::cout << "Going down in history" << std::endl;
-        if(parton_daughter->D1>=0 && TMath::Abs(static_cast<Candidate *>(fPartonInputArray->At(parton_daughter->D1))->PID)==paton_matched_pid)
+        // std::cout << "Going down in history" << std::endl;
+        if(parton_daughter->D1>=0 && TMath::Abs(static_cast<Candidate *>(fPartonInputArray->At(parton_daughter->D1))->PID)==parton_matched_pid)
         {
           parton_daughter = static_cast<Candidate *>(fPartonInputArray->At(parton_daughter->D1));
         }
-        else if(parton_daughter->D2>=0 && TMath::Abs(static_cast<Candidate *>(fPartonInputArray->At(parton_daughter->D2))->PID)==paton_matched_pid)
+        else if(parton_daughter->D2>=0 && TMath::Abs(static_cast<Candidate *>(fPartonInputArray->At(parton_daughter->D2))->PID)==parton_matched_pid)
         {
           parton_daughter = static_cast<Candidate *>(fPartonInputArray->At(parton_daughter->D2));
         }
@@ -329,7 +329,7 @@ void JetFlavorAssociation::GetAlgoFlavor(Candidate *jet, TObjArray *partonArray,
       // While going up the history, we remove all the intermediate states from the considered parton list
       Candidate* parton_ancestor = parton_matched;
       std::vector<int> previous_mother_indices;
-      while(parton_ancestor->M1>=0 && (parton_ancestor->M1<fPartonInputArray->GetEntries()) && std::find(previous_mother_indices.begin(),previous_mother_indices.end(),parton_ancestor->M1)==previous_mother_indices.end() && TMath::Abs(parton_ancestor->PID)==paton_matched_pid)
+      while(parton_ancestor->M1>=0 && (parton_ancestor->M1<fPartonInputArray->GetEntries()) && std::find(previous_mother_indices.begin(),previous_mother_indices.end(),parton_ancestor->M1)==previous_mother_indices.end() && TMath::Abs(parton_ancestor->PID)==parton_matched_pid)
       {
         //std::cout << "Going up in history" << std::endl;
         previous_mother_indices.push_back(parton_ancestor->M1);
